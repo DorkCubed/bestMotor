@@ -65,7 +65,7 @@ def make_ric(output, props: Motorprops):
     return throat, length
 
 
-def eval(finalfile, props, qid):
+def eval(finalfile: str, props: Motorprops, qid = "output"):
     burntime = 0
     thrust = 0
     avgthrust = 0
@@ -98,3 +98,5 @@ def eval(finalfile, props, qid):
         writeall([throat, len, props.number_of_grains, props.grain_diameter, props.grain_core, props.conv_angle, props.div_angle], fin)
         writeall([burntime, thrust, avgthrust, peakpressure, flatness], fin, True)
         fin.close()
+    
+    return ((thrust * flatness * burntime) / peakpressure)
