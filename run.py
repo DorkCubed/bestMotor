@@ -29,47 +29,44 @@ def arr_to_props(arr) -> Motorprops:
     props.exit = float(arr[7])
     return props
 
-def grad(finalfile, oldprops, oldarr, newprops, newarr):
-    gradarr = []
-    dy = eval(finalfile, newprops) - eval(finalfile, oldprops)
-    for i in range(len(oldarr)):
-        gradarr.append(dy / (newarr[i] - oldarr[i] + 1e-6))
-    return gradarr
+def random_scale(i: int, it: int, scale=0.1):
+    return (1 + random.uniform(-1,1) * scale) * (1 - (i / it))
 
-def descent_train(finalfile, startprops: Motorprops, learningrate=0.1, iterations=10, angle_lock = True):
+def anneal_train(finalfile, startprops: Motorprops, iterations=100, angle_lock = True):
     oldarr = props_to_arr(startprops) 
-    newarr = oldarr.copy()
+    newarr = []
+    old = eval(finalfile, arr_to_props(oldarr), "output")
+
     for i in range(iterations):
+        for j in range(len(newarr)):
+            if j == 0:
+                continue
+            if angle_lock and (j == 4 or j == 5):
+                continue
+            
+            newarr = oldarr.copy()
+            if (j == 1 or j == 4 or j == 5):
+                newarr[j] = round(newarr[j] * random_scale(i, iterations, 1))
+            else:
+                newarr[j] = newarr[j] * random_scale(i, iterations)
+                
+            match j:
+                case 1:
+                    if (newarr[1] != bounded(round(newarr[1]), 1, 6)): continue
+                case 2:
+                    if (newarr[2] != bounded(newarr[2], 0.03, 0.2)): continue
+                case 3:
+                    if (newarr[3] != bounded(newarr[3], (newarr[2] / 6), (newarr[2] - 0.01))): continue
+                case 6:
+                    if (newarr[6] != bounded(newarr[6], 0.0, 0.05)): continue
+                case 7:
+                    throat = sqrt(sq(newarr[3]) / 3.05)
+                    if (newarr[7] != bounded(newarr[7], throat * 1.1, 0.5)): continue
 
-        for j in range(len(oldarr)): 
-            newarr[j] = (oldarr[j] * (1 + random.uniform(-1,1) * 0.1))   
-     
-        newarr[0] = oldarr[0]
-        newarr[1] = max(1, round(newarr[1]))
-        newarr[1] = min(6, newarr[1])
-        newarr[2] = max(0.03, newarr[2])
-        newarr[2] = min(0.2, newarr[2])
-        newarr[3] = max((newarr[2] / 6), newarr[3])
-        newarr[3] = min(newarr[2] - 0.01, newarr[3])
-        if angle_lock:
-            newarr[4] = oldarr[4]
-            newarr[5] = oldarr[5]
-        newarr[6] = max(0.0, newarr[6])
-        newarr[6] = min(0.05, newarr[6])
-        throat = sqrt(sq(newarr[3]) / 3.05)
-        newarr[7] = max((throat * 1.1), newarr[7])
-        newarr[7] = min(0.5, newarr[7])
-
-        print(newarr)
-        print()
-        print()
-
-        oldprops = arr_to_props(oldarr)
-        newprops = arr_to_props(newarr)
-        gradarr = grad(finalfile, oldprops, oldarr, newprops, newarr)
-        oldarr = newarr.copy()
-        for j in range(len(oldarr)):
-            newarr[j] = newarr[j] - learningrate * gradarr[j]
+            new = eval(finalfile, arr_to_props(newarr), "output")
+            if new > old:
+                old = new
+                oldarr[j] = newarr[j]
 
     return arr_to_props(newarr)
 
@@ -84,4 +81,4 @@ props.div_angle = 12
 props.throatlen = 0.0
 props.prop_weight = 1000
 props.exit = 0.1
-descent_train("outputs.csv", props)
+anneal_train("outputs.csv", props)

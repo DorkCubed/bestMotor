@@ -24,6 +24,13 @@ def rms(arr):
     rms = rms / len(arr)
     return sqrt(rms)
 
+def bounded(a, lower, upper):
+    if a < lower:
+        return lower
+    elif a > upper:
+        return upper
+    else:
+        return a
 
 def writeall(arr, fin, last=False):
     for i in arr:
@@ -99,4 +106,6 @@ def eval(finalfile: str, props: Motorprops, qid = "output"):
         writeall([burntime, thrust, avgthrust, peakpressure, flatness], fin, True)
         fin.close()
     
-    return ((thrust * flatness * burntime) / peakpressure)
+    perf = (thrust * flatness * burntime) / (peakpressure + 1e-5)
+    print(perf)
+    return perf
