@@ -1,18 +1,14 @@
 from supporting import *
-import multiprocessing
 import random
 
-def testing(finalfile, props:Motorprops):
-    with open(finalfile, "a") as fin:
-        writeall(["throat", "len", "number of grains", "grain diameter", "core diameter", "convergance angle",
-             "divergance angle", "burn time", "thrust", "avg thrust", "peak pressure", "flatness"], fin, True)
-    fin.close()
-    while (props.grain_core) < (props.grain_diameter / 1.5):
-        while (props.number_of_grains) < 7:
-            eval(finalfile, props, "output")
-            props.number_of_grains += 1
-        props.grain_core += 0.001
-        props.number_of_grains = 3
+class Motorlims:
+    grainrange: any
+    min_diameter: float
+    max_diameter: float
+    min_core_ratio: int
+    max_core_ratio: int
+    min_throat_len: float
+    max_throat_len: float 
 
 def props_to_arr(props: Motorprops):
     return [props.prop_weight, props.number_of_grains, props.grain_diameter, props.grain_core, props.conv_angle, props.div_angle, props.throatlen, props.exit]
@@ -32,16 +28,16 @@ def arr_to_props(arr) -> Motorprops:
 def random_scale(i: int, it: int, scale=0.01):
     return (1 + random.uniform(-10,10) * scale) * (1 - (i / it))
 
-def anneal_train(finalfile, startprops: Motorprops, grainrange, iterations=100, angle_lock = True):
+def anneal_train(finalfile, Startprops: Motorprops, Lims: Motorlims, iterations=100, angle_lock = True):
     with open(finalfile, "a") as fin:
         writeall(["throat", "len", "number of grains", "grain diameter", "core diameter", "convergance angle",
              "divergance angle", "burn time", "thrust", "avg thrust", "peak pressure", "flatness"], fin, True)
     fin.close()
     
-    startprops.number_of_grains = grainrange[0]
-    oldarr = props_to_arr(startprops) 
+    Startprops.number_of_grains = Lims.grainrange[0]
+    oldarr = props_to_arr(Startprops) 
     newarr = []
-    old = eval(finalfile, startprops, "output")
+    old = eval(finalfile, Startprops, "output")
     found = 0
 
     for i in range(iterations):
@@ -54,7 +50,7 @@ def anneal_train(finalfile, startprops: Motorprops, grainrange, iterations=100, 
             if angle_lock and (j == 4 or j == 5):
                 continue
 
-            for k in range(grainrange[0], grainrange[1]+1):
+            for k in range(Lims.grainrange[0], Lims.grainrange[1]+1):
                 newarr = oldarr.copy()
                 newarr[1] = k
 
@@ -65,13 +61,13 @@ def anneal_train(finalfile, startprops: Motorprops, grainrange, iterations=100, 
 
                 match j:
                     case 2:
-                        if (newarr[2] != bounded(newarr[2], 0.03, 0.2)): continue
+                        if (newarr[2] != bounded(newarr[2], Lims.min_diameter, Lims.max_diameter)): continue
                     case 3:
-                        if (newarr[3] != bounded(newarr[3], (newarr[2] / 6), (newarr[2] - 0.01))): continue
+                        if (newarr[3] != bounded(newarr[3], (newarr[2] / Lims.min_core_ratio), (newarr[2] / Lims.max_core_ratio))): continue
                         throat = sqrt(sq(newarr[3]) / 3.05)
                         newarr[7] = throat * 1.5
                     case 6:
-                        if (newarr[6] != bounded(newarr[6], 0.0, 0.05)): continue
+                        if (newarr[6] != bounded(newarr[6], Lims.min_throat_len, Lims.max_throat_len)): continue
 
                 if newarr[j] == oldarr[j]:
                     continue
@@ -90,15 +86,24 @@ def anneal_train(finalfile, startprops: Motorprops, grainrange, iterations=100, 
 
     return arr_to_props(oldarr)
 
-props = Motorprops()
+Props = Motorprops()
 
-grainrange = [2, 6]
-props.grain_diameter = 0.075
-props.grain_core = (props.grain_diameter / 3)
-props.conv_angle = 30
-props.div_angle = 12
-props.throatlen = 0.0
-props.prop_weight = 1000
-props.exit = 0.1
+Props.grain_diameter = 0.075
+Props.grain_core = (Props.grain_diameter / 3)
+Props.conv_angle = 30
+Props.div_angle = 12
+Props.throatlen = 0.0
+Props.prop_weight = 1000
+Props.exit = 0.1
 
-make_ric("temp.ric",anneal_train("outputs.csv", props, grainrange))
+Limits = Motorlims()
+
+Limits.grainrange = [2, 5]
+Limits.min_diameter = 0.025
+Limits.max_diameter = 0.1
+Limits.min_core_ratio = 6
+Limits.max_core_ratio = 1.1
+Limits.min_throat_len = 0.0
+Limits.max_throat_len = 0.05
+
+make_ric("temp.ric",anneal_train("outputs.csv", Props, Limits))
