@@ -1,8 +1,8 @@
-from app import App
-from PyQt6.QtCore import Qt
 from math import sqrt
-import csv
+import pandas as pd
+import numpy as np
 import subprocess
+import matplotlib.pyplot as plt
 
 class Motorprops:
     prop_weight: int
@@ -13,6 +13,16 @@ class Motorprops:
     div_angle: int
     throatlen: float
     exit: float
+
+class ThrustPlot:
+    def __init__(self):
+        plt.ion()
+        self.fig, self.ax = plt.subplots()
+        self.line, = self.ax.plot([], [], 'b-', linewidth=2)
+        self.ax.set_xlabel('Time')
+        self.ax.set_ylabel('Thrust')
+        self.ax.grid(True)
+        self.best = plt.text(0.05, 0.3, '')
 
 def sq(x):
     return (x*x)
@@ -72,40 +82,34 @@ def make_ric(output, props: Motorprops):
     return throat, length
 
 
-def eval(finalfile: str, props: Motorprops, qid = "output"):
-    burntime = 0
-    thrust = 0
-    avgthrust = 0
-    flatness = []
-    peakpressure = 0
-    items = 0
-
+def eval(finalfile: str, props: Motorprops, qid = "output", tp: ThrustPlot = None):
     throat, len = make_ric("temp.ric", props)
+
+    if tp is not None: plt.pause(0.1)
     subprocess.run(["python", "main.py", "-o", qid + ".txt", "-h", "temp.ric"])
+
     with open((qid + ".txt"), "r") as csvfiled:
-        csv_data = csv.reader(csvfiled)
-        skip = 0
-        for row in csv_data:
-            if skip == 0:
-                skip = 1
-                continue
-            thrust = thrust + ((float(row[0]) - burntime) * float(row[3]))
-            burntime = float(row[0])
-            avgthrust = avgthrust + float(row[3])
-            if float(row[2]) > peakpressure:
-                peakpressure = float(row[2])
-            items = items + 1
-            flatness.append(float(row[2]))
-        avgthrust = avgthrust / items
-        for i in flatness:
-            i = i - avgthrust
-    flatness = rms(flatness)
+        csv_data = pd.read_csv(csvfiled)
+
+        if tp is not None:
+            tp.line.set_data(csv_data['Time(s)'], csv_data['Thrust(N)'])
+            tp.ax.relim()
+            tp.ax.autoscale_view()
+            tp.fig.canvas.draw()
+            tp.fig.canvas.flush_events()
+
+        burntime = float(csv_data.iloc[-1, 0])
+        avgthrust = (csv_data.iloc[:, 3]).astype(float)
+        avgthrust = np.mean(avgthrust)
+        peakpressure = max((csv_data.iloc[:, 2]).astype(float))
+        flatness = rms((csv_data.iloc[:, 3]).astype(float) - avgthrust)
+        imp = sum((csv_data.iloc[:, 3]).astype(float) * 0.03)
 
     with open(finalfile, "a") as fin:
         writeall([throat, len, props.number_of_grains, props.grain_diameter, props.grain_core, props.conv_angle, props.div_angle], fin)
-        writeall([burntime, thrust, avgthrust, peakpressure, flatness], fin, True)
+        writeall([burntime, imp, avgthrust, peakpressure, flatness], fin, True)
         fin.close()
     
-    perf = (thrust * flatness * burntime) / (peakpressure + 1e-5)
+    perf = (imp * flatness * burntime) / (peakpressure + 1e-5)
     print(perf)
     return perf

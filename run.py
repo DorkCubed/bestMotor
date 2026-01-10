@@ -40,6 +40,8 @@ def anneal_train(finalfile, Startprops: Motorprops, Lims: Motorlims, iterations=
     old = eval(finalfile, Startprops, "output")
     found = 0
 
+    tp = ThrustPlot()
+
     for i in range(iterations):
         if found > 10:
             break
@@ -72,7 +74,7 @@ def anneal_train(finalfile, Startprops: Motorprops, Lims: Motorlims, iterations=
                 if newarr[j] == oldarr[j]:
                     continue
 
-                new = eval(finalfile, arr_to_props(newarr), "output")
+                new = eval(finalfile, arr_to_props(newarr), "output", tp)
                 if new > old:
                     old = new
                     oldarr[j] = newarr[j]
@@ -80,6 +82,7 @@ def anneal_train(finalfile, Startprops: Motorprops, Lims: Motorlims, iterations=
                     if j == 3:
                         oldarr[7] = newarr[7]
                     found = 0
+                    tp.best.set_text(f'Best Performance: {old:.2f}')
                 else:
                     found += 1
                     break
@@ -107,3 +110,4 @@ Limits.min_throat_len = 0.0
 Limits.max_throat_len = 0.05
 
 make_ric("temp.ric",anneal_train("outputs.csv", Props, Limits))
+subprocess.run(["python", "main.py", "temp.ric"])
