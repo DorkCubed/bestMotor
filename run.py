@@ -9,6 +9,7 @@ class Motorlims:
     max_core_ratio: int
     min_throat_len: float
     max_throat_len: float 
+    pt_ratio: float
 
 def props_to_arr(props: Motorprops):
     return [props.prop_weight, props.number_of_grains, props.grain_diameter, props.grain_core, props.conv_angle, props.div_angle, props.throatlen, props.exit]
@@ -31,16 +32,16 @@ def random_scale(i: int, it: int, scale=0.01):
 def anneal_train(finalfile, Startprops: Motorprops, Lims: Motorlims, iterations=100, angle_lock = True):
     with open(finalfile, "a") as fin:
         writeall(["throat", "len", "number of grains", "grain diameter", "core diameter", "convergance angle",
-             "divergance angle", "burn time", "thrust", "avg thrust", "peak pressure", "flatness"], fin, True)
+             "divergance angle", "burn time", "Impulse", "avg thrust", "peak pressure", "flatness"], fin, True)
     fin.close()
     
     Startprops.number_of_grains = Lims.grainrange[0]
+    Startprops.exit = sqrt(sq(Startprops.grain_core) / Lims.pt_ratio) * 1.5
     oldarr = props_to_arr(Startprops) 
     newarr = []
-    old = eval(finalfile, Startprops, "output")
-    found = 0
-
     tp = ThrustPlot()
+    old = eval(finalfile, Startprops, "output", tp)
+    found = 0
 
     for i in range(iterations):
         if found > 10:
@@ -64,7 +65,7 @@ def anneal_train(finalfile, Startprops: Motorprops, Lims: Motorlims, iterations=
                     if (newarr[2] != bounded(newarr[2], Lims.min_diameter, Lims.max_diameter)): continue
                 case 3:
                     if (newarr[3] != bounded(newarr[3], (newarr[2] / Lims.min_core_ratio), (newarr[2] / Lims.max_core_ratio))): continue
-                    throat = sqrt(sq(newarr[3]) / 3.05)
+                    throat = sqrt(sq(newarr[3]) / Lims.pt_ratio)
                     newarr[7] = throat * 1.5
                 case 6:
                     if (newarr[6] != bounded(newarr[6], Lims.min_throat_len, Lims.max_throat_len)): continue
@@ -93,8 +94,7 @@ def anneal_train(finalfile, Startprops: Motorprops, Lims: Motorlims, iterations=
                         tp.best.set_text(f'Best Performance: {new:.2f}')
                     elif k > oldarr[1] : break
 
-            else:
-                found += 1
+            else: found += 1
 
     return arr_to_props(oldarr)
 
@@ -106,7 +106,6 @@ Props.conv_angle = 30
 Props.div_angle = 12
 Props.throatlen = 0.0
 Props.prop_weight = 1000
-Props.exit = 0.1
 
 Limits = Motorlims()
 
@@ -117,6 +116,7 @@ Limits.min_core_ratio = 6
 Limits.max_core_ratio = 1.1
 Limits.min_throat_len = 0.0
 Limits.max_throat_len = 0.05
+Limits.pt_ratio = 3.05
 
 make_ric("temp.ric",anneal_train("outputs.csv", Props, Limits))
 subprocess.run(["python", "main.py", "temp.ric"])

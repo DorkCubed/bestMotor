@@ -12,7 +12,9 @@ class Motorprops:
     conv_angle: int
     div_angle: int
     throatlen: float
-    exit: float
+    
+    def __init__(self):
+        self.exit = 0.1
 
 class ThrustPlot:
     def __init__(self):
