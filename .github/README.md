@@ -1,6 +1,6 @@
 bestMotor
 ==========
-![Logo](./resources/oMIconCycles.png)
+![Logo](../resources/oMIconCycles.png)
 
 Overview
 --------
@@ -11,8 +11,9 @@ Building from Source
 
 The easiest way to build/run from source code is to clone the repository and install the required dependencies into a virtual environment:
 ```
-$ git clone https://github.com/reilleya/bestMotor
+$ git clone https://github.com/DorkCubed/bestMotor/
 $ cd bestMotor
+$ git checkout best
 $ python3 -m venv .venv
 $ source .venv/bin/activate
 $ pip install -r requirements.txt
