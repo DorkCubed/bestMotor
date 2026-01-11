@@ -51,41 +51,50 @@ def anneal_train(finalfile, Startprops: Motorprops, Lims: Motorlims, iterations=
                 continue
             if angle_lock and (j == 4 or j == 5):
                 continue
+            
+            newarr = oldarr.copy()
 
-            for k in range(Lims.grainrange[0], Lims.grainrange[1]+1):
-                newarr = oldarr.copy()
-                newarr[1] = k
+            if (j == 4 or j == 5):
+                newarr[j] = round(newarr[j] * random_scale(i, iterations, 1))
+            else:
+                newarr[j] = newarr[j] * random_scale(i, iterations)
+            
+            match j:
+                case 2:
+                    if (newarr[2] != bounded(newarr[2], Lims.min_diameter, Lims.max_diameter)): continue
+                case 3:
+                    if (newarr[3] != bounded(newarr[3], (newarr[2] / Lims.min_core_ratio), (newarr[2] / Lims.max_core_ratio))): continue
+                    throat = sqrt(sq(newarr[3]) / 3.05)
+                    newarr[7] = throat * 1.5
+                case 6:
+                    if (newarr[6] != bounded(newarr[6], Lims.min_throat_len, Lims.max_throat_len)): continue
+            
+            if newarr[j] == oldarr[j]:
+                continue
+            
+            new = eval(finalfile, arr_to_props(newarr), "output", tp)
+            
+            if new > old:
+                old = new
+                oldarr[j] = newarr[j]
+                oldarr[1] = newarr[1]
+                if j == 3:
+                    oldarr[7] = newarr[7]
+                found = 0
+                tp.best.set_text(f'Best Performance: {new:.2f}')
 
-                if (j == 4 or j == 5):
-                    newarr[j] = round(newarr[j] * random_scale(i, iterations, 1))
-                else:
-                    newarr[j] = newarr[j] * random_scale(i, iterations)
+                for k in range(Lims.grainrange[0], Lims.grainrange[1]+1):
+                    grainarr = oldarr.copy()
+                    grainarr[1] = k
+                    new = eval(finalfile, arr_to_props(grainarr), "output", tp)
+                    if new > old:
+                        old = new
+                        oldarr[1] = k
+                        tp.best.set_text(f'Best Performance: {new:.2f}')
+                    elif k > oldarr[1] : break
 
-                match j:
-                    case 2:
-                        if (newarr[2] != bounded(newarr[2], Lims.min_diameter, Lims.max_diameter)): continue
-                    case 3:
-                        if (newarr[3] != bounded(newarr[3], (newarr[2] / Lims.min_core_ratio), (newarr[2] / Lims.max_core_ratio))): continue
-                        throat = sqrt(sq(newarr[3]) / 3.05)
-                        newarr[7] = throat * 1.5
-                    case 6:
-                        if (newarr[6] != bounded(newarr[6], Lims.min_throat_len, Lims.max_throat_len)): continue
-
-                if newarr[j] == oldarr[j]:
-                    continue
-
-                new = eval(finalfile, arr_to_props(newarr), "output", tp)
-                if new > old:
-                    old = new
-                    oldarr[j] = newarr[j]
-                    oldarr[1] = newarr[1]
-                    if j == 3:
-                        oldarr[7] = newarr[7]
-                    found = 0
-                    tp.best.set_text(f'Best Performance: {old:.2f}')
-                else:
-                    found += 1
-                    break
+            else:
+                found += 1
 
     return arr_to_props(oldarr)
 
