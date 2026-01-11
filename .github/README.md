@@ -4,7 +4,7 @@ bestMotor
 
 Overview
 --------
-Read the [openMotor readMe](./README.md) for more information.
+Read the [openMotor readMe](https://github.com/reilleya/openMotor/) for more information.
 
 Building from Source
 --------------------
