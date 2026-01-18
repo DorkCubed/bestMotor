@@ -40,7 +40,7 @@ def anneal_train(finalfile, Startprops: Motorprops, Lims: Motorlims, iterations=
     oldarr = props_to_arr(Startprops) 
     newarr = []
     tp = ThrustPlot()
-    old = eval(finalfile, Startprops, "output", tp)
+    old = eval(finalfile, Startprops, "output", tp, Lims.pt_ratio)
     found = 0
 
     for i in range(iterations):
@@ -73,7 +73,7 @@ def anneal_train(finalfile, Startprops: Motorprops, Lims: Motorlims, iterations=
             if newarr[j] == oldarr[j]:
                 continue
             
-            new = eval(finalfile, arr_to_props(newarr), "output", tp)
+            new = eval(finalfile, arr_to_props(newarr), "output", tp, Lims.pt_ratio)
             
             if new > old:
                 old = new
@@ -87,7 +87,7 @@ def anneal_train(finalfile, Startprops: Motorprops, Lims: Motorlims, iterations=
                 for k in range(Lims.grainrange[0], Lims.grainrange[1]+1):
                     grainarr = oldarr.copy()
                     grainarr[1] = k
-                    new = eval(finalfile, arr_to_props(grainarr), "output", tp)
+                    new = eval(finalfile, arr_to_props(grainarr), "output", tp, Lims.pt_ratio)
                     if new > old:
                         old = new
                         oldarr[1] = k
@@ -116,7 +116,7 @@ Limits.min_core_ratio = 6
 Limits.max_core_ratio = 1.1
 Limits.min_throat_len = 0.0
 Limits.max_throat_len = 0.05
-Limits.pt_ratio = 3.05
+Limits.pt_ratio = 2.85
 
-make_ric("temp.ric",anneal_train("outputs.csv", Props, Limits))
+make_ric("temp.ric", anneal_train("outputs.csv", Props, Limits, 100, Limits.pt_ratio), Limits.pt_ratio)
 subprocess.run(["python", "main.py", "temp.ric"])

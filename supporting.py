@@ -51,7 +51,7 @@ def writeall(arr, fin, last=False):
         fin.write("\n")
 
 
-def make_ric(output, props: Motorprops):
+def make_ric(output, props: Motorprops, pt_ratio = 3.05):
     prop_w = props.prop_weight / 1000
     with open("boiler.txt", "r") as f:
         g = f.read().split("\n\n")
@@ -60,7 +60,7 @@ def make_ric(output, props: Motorprops):
         f.write(g[0])
         length = (prop_w / density) / (3.14 * sq(props.grain_diameter/2) -
                                  3.14 * sq(props.grain_core / 2)) / props.number_of_grains / 1000
-        throat = sqrt(sq(props.grain_core) / 3.05)
+        throat = sqrt(sq(props.grain_core) / pt_ratio)
         f.write("\n")
         for i in range(props.number_of_grains):
             f.write("  - properties:\n")
@@ -84,8 +84,8 @@ def make_ric(output, props: Motorprops):
     return throat, length
 
 
-def eval(finalfile: str, props: Motorprops, qid = "output", tp: ThrustPlot = None):
-    throat, len = make_ric("temp.ric", props)
+def eval(finalfile: str, props: Motorprops, qid = "output", tp: ThrustPlot = None, pt_ratio = 3.05):
+    throat, len = make_ric("temp.ric", props, pt_ratio)
 
     if tp is not None: plt.pause(0.1)
     subprocess.run(["python", "main.py", "-o", qid + ".txt", "-h", "temp.ric"])

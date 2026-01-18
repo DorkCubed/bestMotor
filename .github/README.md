@@ -59,7 +59,6 @@ Props.conv_angle = 30 # (In Degrees)
 Props.div_angle = 12
 Props.throatlen = 0.0
 Props.prop_weight = 1000 # == 1 Kg
-
 ```
 ###### Note: There is an internal props.exit which governs nozzle exit diameter. It is recommended to not change this, to keep the expansion ratio constant for each tested motor. Instead, optemize the expansion ratio by going into Tools > Optemize > Expansion Ratio once the program is done.
 
@@ -84,12 +83,6 @@ Limits.pt_ratio = 3.05
 Once everything is set up, you can start bestMotor by running: `python run.py`
 
 ###### Note: On some systems, Python 2 and 3 are installed simultaneously, so you may have to specify which version to run when creating the venv. After the venv has been activated, the programs `python` and `pip` are aliased to the python runtime specific for your venv, so use those (instead of `pip3` and `python3`, on e.g. Debian Linux)
-
-Data Files
------------
-bestMotor uses [YAML](https://en.wikipedia.org/wiki/YAML) for data storage. Motor files have the extension `.ric` to differentiate them, but internally they are YAML and can be edited in a text editor if desired. The recommended MIME type for these files is `application/vnd.openmotor+yaml`.
-
-The remaining user information, like propellant data and preferences, is stored in plain YAML files in `<AppData>\Local\openMotor` on Windows, `/Users/<username>/Library/Application Support/openMotor` on Mac OS, and `/home/<username>/.local/share/openMotor` on Linux.
 
 License
 -------
